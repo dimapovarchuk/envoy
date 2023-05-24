@@ -1,0 +1,48 @@
+version: '3.8'
+
+networks:
+  website-net:
+
+    
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.25-latest
+    container_name: envoy
+    hostname: envoy
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml
+    ports:
+      - 9901:9901
+      - 80:80
+    networks:
+      - website-net
+
+  api:
+    build: api
+    deploy:
+      mode: replicated
+      replicas: 2
+      endpoint_mode: dnsrr
+    networks:
+      - website-net
+
+  website:
+    build: website
+    deploy:
+      mode: replicated
+      replicas: 2
+      endpoint_mode: dnsrr
+    networks:
+    - website-net
+
+  db:
+    image: mysql:latest
+    restart: always
+    volumes:
+      - ./init_mysql:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - website-net
+
+
